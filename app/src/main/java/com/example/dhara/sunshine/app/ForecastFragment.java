@@ -37,6 +37,8 @@ public class ForecastFragment extends Fragment {
 
     private final String LOG_TAG = ForecastFragment.class.getSimpleName();
 
+    private ArrayAdapter<String> mForecastAdapter;
+
     public ForecastFragment() {
     }
 
@@ -80,7 +82,7 @@ public class ForecastFragment extends Fragment {
         List<String> weekForecast = new ArrayList<String>(Arrays.asList(forecastArray));
 
 //        adapter initialized
-        ArrayAdapter<String> listAdapter = new ArrayAdapter<String>(
+        mForecastAdapter = new ArrayAdapter<String>(
 //                The current context (this fragment's parent activity)
                 getActivity(),
 //                ID of list item layout
@@ -92,18 +94,33 @@ public class ForecastFragment extends Fragment {
 
 //        setting up an adapter - to populate the fake data created
         ListView adapter = (ListView) rootView.findViewById(R.id.listview_forecast);
-        adapter.setAdapter(listAdapter);
+        adapter.setAdapter(mForecastAdapter);
 
         return rootView;
     }
 
-    //        Chapter 2
-    public class FetchWeatherTask extends AsyncTask<String, Void, Void> {
+//    Chapter 2
+    public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
 
-        private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
+    private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
-        @Override
-        protected Void doInBackground(String... params) {
+    @Override
+    protected void onPostExecute(String[] strings) {
+//        super.onPostExecute(strings);
+        if (strings != null) {
+//            clearing the initial data in the forecast adapter
+            mForecastAdapter.clear();
+//            re-initializing the adapter with the new data
+            for (String dayForecast : strings) {
+                mForecastAdapter.add(dayForecast);
+            }
+//            for API 11 and above
+//            mForecastAdapter.addAll(strings);
+        }
+    }
+
+    @Override
+        protected String[] doInBackground(String... params) {
 
             if (params.length == 0) {
                 return null;
@@ -146,7 +163,7 @@ public class ForecastFragment extends Fragment {
 
                 URL url = new URL(builtUri.toString());
 
-                Log.v(LOG_TAG, "Built URI " + builtUri.toString());
+//                Log.v(LOG_TAG, "Built URI " + builtUri.toString());
 
 //                TODO - check for network connection is present or not
 //                TODO - if you dont have network connection then notify the user
@@ -179,7 +196,7 @@ public class ForecastFragment extends Fragment {
                 }
                 forecastJsonStr = buffer.toString();
 
-                Log.v(LOG_TAG, forecastJsonStr);
+//                Log.v(LOG_TAG, forecastJsonStr);
 
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Error ", e);
@@ -198,7 +215,17 @@ public class ForecastFragment extends Fragment {
                     }
                 }
             }
-            return null;
+
+            String[] weatherForecast = {};
+
+            try {
+                weatherForecast = getWeatherDataFromJson(forecastJsonStr, numDays);
+            } catch (JSONException e) {
+                Log.e(LOG_TAG, e.getMessage(), e);
+                e.printStackTrace();
+            }
+
+            return weatherForecast;
         }
 
     }
@@ -295,9 +322,9 @@ public class ForecastFragment extends Fragment {
             resultStrs[i] = day + " - " + description + " - " + highAndLow;
         }
 
-        for (String s : resultStrs) {
-            Log.v(LOG_TAG, "Forecast entry: " + s);
-        }
+//        for (String s : resultStrs) {
+//            Log.v(LOG_TAG, "Forecast entry: " + s);
+//        }
         return resultStrs;
 
     }
